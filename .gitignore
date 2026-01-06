@@ -31,6 +31,10 @@ yarn-error.log*
 .env.production
 .env.development
 
+# env example files
+.env.local.example
+.env.r2.example
+
 # R2 images - now served from CDN
 public/images/
 

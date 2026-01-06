@@ -34,6 +34,9 @@ yarn-error.log*
 # R2 images - now served from CDN
 public/images/
 
+# R2 upload record - local upload tracking
+r2-upload-record.json
+
 # vercel
 .vercel
 

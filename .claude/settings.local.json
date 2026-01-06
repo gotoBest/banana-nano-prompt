@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(frontend-design)",
+      "Bash(curl:*)",
+      "Bash(npm install)",
+      "Bash(npm view:*)",
+      "Bash(npm audit fix:*)",
+      "Bash(npm run build:*)",
+      "Bash(tree:*)",
+      "Bash(npm run dev)",
+      "Bash(cat:*)",
+      "Bash(npm run download-images:*)",
+      "Bash(node:*)",
+      "Bash(git checkout:*)",
+      "Bash(lsof:*)",
+      "Bash(kill:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Bash(xargs kill:*)",
+      "Bash(chmod:*)",
+      "Bash(npm install:*)",
+      "Bash(NEXT_PUBLIC_R2_CDN_URL=https://gotovpn.win node:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

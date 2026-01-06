@@ -117,7 +117,7 @@ export default function Header({
             className="flex items-center gap-2 flex-shrink-0 ml-auto"
           >
             {/* GitHub Link */}
-            <a
+            <motion.a
               href="https://github.com/gotoBest/banana-nano-prompt"
               target="_blank"
               rel="noopener noreferrer"
@@ -132,7 +132,7 @@ export default function Header({
               </div>
               {/* Glow effect on hover */}
               <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity blur-md -z-10" />
-            </a>
+            </motion.a>
 
             {/* Language Toggle */}
             <motion.button

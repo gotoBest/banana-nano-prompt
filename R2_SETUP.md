@@ -1,12 +1,39 @@
-# Cloudflare R2 图片上传指南
+# 📦 Cloudflare R2 图片存储配置指南
 
-本指南将帮助你将 `public/images/` 文件夹上传到 Cloudflare R2 存储。
+完整的 Cloudflare R2 图片上传和配置指南，用于将项目图片迁移到 CDN 存储。
+
+---
+
+## 🎯 为什么使用 R2？
+
+### 成本优势
+
+**使用 R2 前:**
+- GitHub 仓库：402MB
+- 每次克隆：下载 402MB
+- 总计：每克隆一次 402MB 传输
+
+**使用 R2 后:**
+- GitHub 仓库：~2MB
+- 每次克隆：下载 2MB
+- 图片：按需从 CDN 加载
+- 总计：首次仅 2MB，后续按需加载
+
+**节省**: 99.5% 仓库体积！💚
+
+### R2 免费额度
+
+- ✅ 每月 10GB 存储
+- ✅ 每月 1000万次请求
+- ✅ 本项目估算：
+  - 存储：402MB (<< 10GB) ✅ **免费**
+  - 请求：10万次/月 (<< 1000万) ✅ **免费**
+
+---
 
 ## 📋 前置要求
 
-### 1. Cloudflare R2 Bucket
-
-如果你还没有 R2 bucket，需要先创建：
+### 步骤 1: 创建 R2 Bucket
 
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. 进入 **R2 Object Storage**
@@ -15,7 +42,7 @@
 5. 选择区域（推荐：自动）
 6. 点击 **Create bucket**
 
-### 2. 创建 API Token
+### 步骤 2: 创建 API Token
 
 1. 在 R2 页面，点击 **Manage R2 API Tokens**
 2. 点击 **Create API Token**
@@ -26,12 +53,12 @@
 4. 点击 **Create API Token**
 5. **重要**: 保存 **Access Key ID** 和 **Secret Access Key**（只显示一次）
 
-### 3. 获取 Account ID
+### 步骤 3: 获取 Account ID
 
 1. 在 Cloudflare Dashboard 右侧可以看到你的 **Account ID**
 2. 或者从 URL 中获取：`https://dash.cloudflare.com/<ACCOUNT_ID>/...`
 
-### 4. 配置自定义域名（可选但推荐）
+### 步骤 4: 配置自定义域名（可选但推荐）
 
 **为什么要用自定义域名？**
 - ✅ 避免 R2 默认域名的 CORS 问题
@@ -85,7 +112,7 @@ R2_BUCKET_NAME=banana-nano-prompts
 R2_ACCOUNT_ID=your_account_id
 
 # Cloudflare R2 Endpoint
-# 如果配置了自定义域名（步骤 4），使用自定义域名
+# 如果配置了自定义域名，使用自定义域名
 R2_ENDPOINT=https://cdn.yourdomain.com
 
 # 如果没有自定义域名，使用 R2 默认端点
@@ -96,7 +123,7 @@ R2_ENDPOINT=https://cdn.yourdomain.com
 
 ---
 
-## 📤 上传图片
+## 📤 上传图片到 R2
 
 ### 方式 1: 使用 Shell 脚本（推荐）
 
@@ -105,7 +132,13 @@ R2_ENDPOINT=https://cdn.yourdomain.com
 ./upload-to-r2.sh
 ```
 
-### 方式 2: 使用 Node.js 脚本
+### 方式 2: 使用 NPM 脚本
+
+```bash
+npm run r2:upload
+```
+
+### 方式 3: 使用 Node.js 脚本
 
 ```bash
 # 确保 .env.local 已配置
@@ -124,7 +157,7 @@ node upload-images-to-r2.js
 🌐 Endpoint: https://cdn.yourdomain.com
 
 🔍 Checking existing objects in R2...
-Found 0 existing objects
+Found 1000 existing objects (syncing to local record...)
 
 📤 Uploading files...
 
@@ -140,6 +173,7 @@ Found 0 existing objects
 📊 Statistics:
   Total files:   1303
   ✅ Success:    1303
+  ⏭️  Skipped:   0
   ❌ Failed:     0
 
 🎯 Next steps:
@@ -149,6 +183,20 @@ Found 0 existing objects
 ```
 
 **预计时间**: 3-5 分钟（取决于网络速度和图片数量）
+
+### 增量上传功能
+
+项目支持增量上传，已上传的文件会自动跳过：
+
+```
+📊 Upload Record:
+  Previously uploaded: 1000 files
+  New files to upload: 303 files
+  ⏭️  Skipping: 1000 files
+  📤 Uploading: 303 files
+```
+
+上传记录保存在 `r2-upload-record.json`，每次上传会自动同步 R2 中已存在的文件。
 
 ---
 
@@ -174,11 +222,9 @@ curl -I https://cdn.yourdomain.com/images/1.png
 
 ---
 
-## 🔨 更新代码使用 R2
+## 🔄 更新图片 URL 为 R2 CDN
 
-上传完成后，需要更新代码以使用 R2 的图片地址。
-
-### 选项 1: 环境变量方式（推荐）
+### 方式 1: 环境变量方式（推荐）
 
 #### 1. 添加环境变量到 .env.local
 
@@ -190,130 +236,108 @@ NEXT_PUBLIC_R2_CDN_URL=https://cdn.yourdomain.com
 # NEXT_PUBLIC_R2_CDN_URL=https://your_account_id.r2.cloudflarestorage.com/bucket-name
 ```
 
-#### 2. 创建图片 URL 辅助函数
+#### 2. 更新代码中的图片 URL
 
-创建 `src/lib/images.ts`:
-
-```typescript
-export function getImageUrl(imagePath: string): string {
-  const cdnUrl = process.env.NEXT_PUBLIC_R2_CDN_URL;
-
-  if (!cdnUrl) {
-    // 开发环境使用本地图片
-    return `/${imagePath}`;
-  }
-
-  // 生产环境使用 R2 CDN
-  return `${cdnUrl}/${imagePath}`;
-}
-```
-
-#### 3. 更新组件使用新函数
+项目代码已经支持检测 R2 URL，无需额外修改：
 
 **PromptCard.tsx:**
 ```typescript
-import { getImageUrl } from '@/lib/images';
-
-const imageUrl = item.coverImage ? getImageUrl(item.coverImage) : null;
+const imageUrl = item.coverImage
+  ? (item.coverImage.startsWith('http') ? item.coverImage : `/${item.coverImage}`)
+  : null
 ```
 
 **Modal.tsx:**
 ```typescript
-const imageUrl = getImageUrl(img);
+{item.images.map((img, idx) => (
+  <img
+    key={idx}
+    src={img.startsWith('http') ? img : `/${img}`}
+    alt={`${item.title} - 图片 ${idx + 1}`}
+  />
+))}
 ```
 
-### 选项 2: 批量更新数据文件
+### 方式 2: 批量更新数据文件
 
-如果你想要直接更新 `prompts.json`:
+如果想要直接更新 `prompts.json`:
 
 ```bash
-# 创建更新脚本
-node update-image-urls-to-r2.js
+# 运行更新脚本
+npm run r2:update-urls
 ```
 
----
-
-## 📝 数据文件批量更新脚本
-
-创建 `update-image-urls-to-r2.js`:
-
-```javascript
-const fs = require('fs');
-
-const data = JSON.parse(fs.readFileSync('./src/data/prompts.json', 'utf8'));
-const cdnUrl = process.env.NEXT_PUBLIC_R2_CDN_URL || 'https://your-cdn-domain.com';
-
-let updated = 0;
-
-data.items.forEach(item => {
-  // 更新 images 数组
-  item.images = item.images.map(img => {
-    if (img.startsWith('images/')) {
-      updated++;
-      return `${cdnUrl}/${img}`;
-    }
-    return img;
-  });
-
-  // 更新 coverImage
-  if (item.coverImage && item.coverImage.startsWith('images/')) {
-    updated++;
-    item.coverImage = `${cdnUrl}/${item.coverImage}`;
-  }
-});
-
-fs.writeFileSync('./src/data/prompts.json', JSON.stringify(data, null, 2), 'utf8');
-
-console.log(`✅ Updated ${updated} image URLs`);
-```
-
-运行：
+或手动设置 CDN URL 并运行：
 
 ```bash
 NEXT_PUBLIC_R2_CDN_URL=https://your-cdn-domain.com \
-node update-image-urls-to-r2.js
+  node update-image-urls-to-r2.js
+```
+
+### URL 更新过程
+
+```
+🔄 Updating image URLs to use R2 CDN...
+📦 CDN URL: https://your-cdn-domain.com
+
+✅ Update complete!
+📊 Statistics:
+  Updated URLs: 2168
+  Skipped: 0
 ```
 
 ---
 
 ## 🎯 两种部署方案
 
-### 方案 A: 本地图片 + R2 图片（推荐用于过渡期）
+### 方案 A: 保留本地图片 + R2（推荐开发时）
+
+**适用**: 开发初期
 
 **优点:**
-- ✅ 本地开发不需要网络
-- ✅ 降级策略完善
+- ✅ 开发无需网络
+- ✅ 有备份
 - ✅ 易于调试
 
 **缺点:**
-- ❌ 仓库体积大（402MB）
+- ❌ 仓库大（402MB）
 - ❌ 首次克隆慢
 
-### 方案 B: 仅 R2 图片（推荐用于生产）
+### 方案 B: 仅 R2（推荐生产环境）
+
+**适用**: 生产环境
 
 **优点:**
-- ✅ 仓库体积小（~2MB）
-- ✅ 克隆速度快
+- ✅ 仓库小（~2MB）
+- ✅ 克隆快
 - ✅ CDN 加速
 
 **缺点:**
 - ❌ 需要网络才能开发
 - ❌ 依赖外部服务
 
+**迁移到方案 B:**
+```bash
+# 从 Git 移除本地图片
+git rm -r --cached public/images/
+echo "public/images/" >> .gitignore
+git commit -m "chore: migrate to R2 CDN"
+```
+
 ---
 
-## 🚀 生产环境推荐配置
+## 🚀 生产环境配置
 
 ### 1. .gitignore 更新
 
-如果选择方案 B（仅 R2），删除本地图片：
+如果选择方案 B（仅 R2），确保 .gitignore 包含：
 
-```bash
-# 从 Git 中移除图片
-git rm -r --cached public/images/
+```gitignore
+# R2 images - served from CDN
+public/images/
 
-# 更新 .gitignore
-echo "public/images/" >> .gitignore
+# R2 upload record - local upload tracking
+r2-upload-record.json
 ```
 
 ### 2. 环境变量配置
@@ -323,17 +347,32 @@ echo "public/images/" >> .gitignore
 2. Environment Variables
 3. 添加：
    - `NEXT_PUBLIC_R2_CDN_URL` = `https://your-cdn-domain.com`
-   - `R2_ACCESS_KEY_ID`
-   - `R2_SECRET_ACCESS_KEY`
-   - （其他 R2 配置）
+   - （可选：R2 凭证，如果需要在 Vercel 上传）
 
 **其他平台:**
 - 按平台文档配置环境变量
 - 确保客户端变量以 `NEXT_PUBLIC_` 开头
 
-### 3. CORS 配置（如果使用自定义域名）
+### 3. Next.js 配置
 
-在 R2 bucket 设置中配置 CORS：
+确保 `next.config.js` 包含 R2 域名：
+
+```javascript
+images: {
+  unoptimized: false,
+  remotePatterns: [
+    {
+      protocol: 'https',
+      hostname: 'gotovpn.win',
+      pathname: '/images/**',
+    },
+  ],
+}
+```
+
+### 4. CORS 配置（如果使用自定义域名）
+
+在 R2 bucket 设置中配置 CORS（通常不需要，因为使用自定义域名）：
 
 ```json
 [
@@ -386,31 +425,41 @@ Error: NetworkingError
 ### 问题 4: CORS 错误
 
 **解决:**
-- 使用自定义域名
+- 使用自定义域名（推荐）
 - 或在 R2 中配置 CORS 规则
 - 确保网站域名在允许列表中
 
+### 问题 5: 图片 404 错误
+
+**解决:**
+- 确认图片已上传到 R2
+- 检查 CDN URL 是否正确
+- 确认 Next.js 配置中的 hostname
+- 清除浏览器缓存
+
 ---
 
-## 💰 成本估算
+## 📁 项目文件说明
 
-Cloudflare R2 定价（2024）:
+| 文件 | 用途 |
+|------|------|
+| `.env.r2.example` | 环境变量模板 |
+| `upload-images-to-r2.js` | 图片上传脚本（Node.js） |
+| `upload-to-r2.sh` | 图片上传脚本（Shell） |
+| `update-image-urls-to-r2.js` | 批量更新图片 URL |
+| `r2-upload-record.json` | 上传记录（自动生成，gitignore） |
+| `R2_SETUP.md` | 本文档 - 完整配置指南 |
 
-- **存储**: $0.015/GB/月
-- **A类操作**（GET）: $4.50/百万次请求
-- **B类操作**（PUT）: $5.00/百万次请求
+### NPM 脚本
 
-**本项目估算（402MB, 1303 张图片）:**
-
-- 存储: ~$0.006/月
-- 1000 次页面浏览: ~$0.02
-- 10,000 次页面浏览: ~$0.20
-
-**注**: Cloudflare R2 提供 **免费额度**:
-- 每月 10GB 存储
-- 每月 1000万次 A类操作请求
-
-本项目很可能完全在免费额度内！
+```json
+{
+  "scripts": {
+    "r2:upload": "node upload-images-to-r2.js",
+    "r2:update-urls": "node update-image-urls-to-r2.js"
+  }
+}
+```
 
 ---
 
@@ -419,6 +468,7 @@ Cloudflare R2 定价（2024）:
 - [Cloudflare R2 文档](https://developers.cloudflare.com/r2/)
 - [AWS S3 SDK 文档](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-s3/)
 - [R2 迁移工具](https://developers.cloudflare.com/r2/bucket-migration/)
+- [Next.js Image 优化](https://nextjs.org/docs/app/building-your-application/optimizing/images)
 
 ---
 
@@ -429,12 +479,24 @@ Cloudflare R2 定价（2024）:
 - [ ] 所有 1303 张图片都已上传
 - [ ] 在 R2 Dashboard 可以看到文件
 - [ ] 图片可以通过 URL 访问
-- [ ] 代码已更新使用 R2 URL
+- [ ] 代码已更新使用 R2 URL（如果选择方案 B）
 - [ ] 本地测试通过
 - [ ] 生产环境测试通过
 - [ ] .env.local 已添加到 .gitignore
-- [ ]（可选）本地图片已从 Git 移除
+- [ ] r2-upload-record.json 已添加到 .gitignore
+- [ ] （可选）本地图片已从 Git 移除
 
 ---
 
-**祝你上传顺利！** 🚀
+## 💡 最佳实践
+
+1. **开发环境**: 保留本地图片（方案 A）
+2. **生产环境**: 使用 R2 CDN（方案 B）
+3. **增量上传**: 利用上传记录功能，避免重复上传
+4. **备份策略**: 定期备份 R2 数据
+5. **监控成本**: 关注 R2 使用量，确保在免费额度内
+6. **自定义域名**: 强烈推荐配置，避免 CORS 问题
+
+---
+
+**祝你配置顺利！** 🚀

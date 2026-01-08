@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { PromptItem } from '@/types'
 import { getPromptData, buildAllTags, filterItems } from '@/lib/data'
-import Header from '@/components/Header'
-import PromptCard from '@/components/PromptCard'
-import Modal from '@/components/Modal'
+import HeaderNew from '@/components/HeaderNew'
+import PromptCardNew from '@/components/PromptCardNew'
+import ListCard from '@/components/ListCard'
+import ModalNew from '@/components/ModalNew'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-const ITEMS_PER_PAGE = 24 // 每次加载24个
+type ViewMode = 'gallery' | 'list' | 'filter'
+
+const ITEMS_PER_PAGE = 24
 
 export default function Home() {
   const { t } = useLanguage()
@@ -21,7 +24,12 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedItem, setSelectedItem] = useState<PromptItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('gallery')
   const observerTarget = useRef<HTMLDivElement>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+
+  // 计算 hasMore - 需要在 useEffect 之前定义
+  const hasMore = displayCount < filteredItems.length
 
   useEffect(() => {
     async function loadData() {
@@ -49,26 +57,43 @@ export default function Home() {
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
+    const target = observerTarget.current
+
+    if (!target) {
+      return
+    }
+
+    // 清理旧的 observer
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+      observerRef.current = null
+    }
+
+    // 创建新的 observer
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && displayCount < filteredItems.length) {
-          setDisplayCount((prev) => Math.min(prev + ITEMS_PER_PAGE, filteredItems.length))
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => {
+            const maxCount = filteredItems.length
+            if (prev < maxCount) {
+              return Math.min(prev + ITEMS_PER_PAGE, maxCount)
+            }
+            return prev
+          })
         }
       },
-      { threshold: 0.1, rootMargin: '100px' }
+      { threshold: 0.1, rootMargin: '200px' }
     )
 
-    const currentTarget = observerTarget.current
-    if (currentTarget) {
-      observer.observe(currentTarget)
-    }
+    observer.observe(target)
+    observerRef.current = observer
 
     return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget)
+      if (observerRef.current) {
+        observerRef.current.disconnect()
       }
     }
-  }, [displayCount, filteredItems.length])
+  }, [filteredItems.length, hasMore, viewMode])
 
   const handleTagToggle = useCallback((tag: string) => {
     setSelectedTags((prev) => {
@@ -100,7 +125,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">
           <motion.div
             animate={{
@@ -112,12 +137,12 @@ export default function Home() {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="text-7xl mb-6"
+            className="text-8xl mb-8"
           >
             🍌
           </motion.div>
           <motion.div
-            className="font-display text-2xl gradient-text-animated"
+            className="font-display text-xl text-white/60"
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -129,11 +154,10 @@ export default function Home() {
   }
 
   const displayedItems = filteredItems.slice(0, displayCount)
-  const hasMore = displayCount < filteredItems.length
 
   return (
-    <main className="min-h-screen pb-8">
-      <Header
+    <main className="min-h-screen bg-black">
+      <HeaderNew
         allTags={allTags}
         selectedTags={selectedTags}
         onTagToggle={handleTagToggle}
@@ -142,57 +166,92 @@ export default function Home() {
         onSearchChange={setSearchTerm}
         resultCount={filteredItems.length}
         totalCount={items.length}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        items={items}
       />
 
-      <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6">
+      <div className="max-w-[2000px] mx-auto px-4 lg:px-6 py-6">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-32">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="text-8xl mb-6"
-            >
-              🔍
-            </motion.div>
-            <h3 className="font-display text-3xl text-white mb-3">{t.noResults}</h3>
-            <p className="text-purple-400 text-lg">{t.noResultsHint}</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-32"
+          >
+            <div className="text-6xl mb-6">🔍</div>
+            <h3 className="font-display text-2xl text-white mb-2">{t.noResults}</h3>
+            <p className="text-white/40 text-lg">{t.noResultsHint}</p>
+          </motion.div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 lg:gap-4">
-              {displayedItems.map((item, index) => (
-                <PromptCard
-                  key={item.id}
-                  item={item}
-                  onClick={() => setSelectedItem(item)}
-                  index={index}
-                />
-              ))}
-            </div>
+          <motion.div
+            key={viewMode}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+              {viewMode === 'gallery' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
+                  {displayedItems.map((item, index) => (
+                    <PromptCardNew
+                      key={item.id}
+                      item={item}
+                      onClick={() => setSelectedItem(item)}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              )}
 
-            {/* Loading indicator and observer target */}
-            <div ref={observerTarget} className="flex flex-col items-center justify-center py-8">
-              {hasMore && (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="text-4xl mb-2"
-                >
-                  🍌
-                </motion.div>
+              {viewMode === 'list' && (
+                <div className="flex flex-col gap-3 max-w-5xl mx-auto">
+                  {displayedItems.map((item, index) => (
+                    <ListCard
+                      key={item.id}
+                      item={item}
+                      onClick={() => setSelectedItem(item)}
+                      index={index}
+                    />
+                  ))}
+                </div>
               )}
-              {!hasMore && displayedItems.length > 0 && (
-                <p className="text-purple-400 text-sm">
-                  {t.allDisplayed} {displayedItems.length} {t.cases}
-                </p>
+
+              {viewMode === 'filter' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
+                  {displayedItems.map((item, index) => (
+                    <PromptCardNew
+                      key={item.id}
+                      item={item}
+                      onClick={() => setSelectedItem(item)}
+                      index={index}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
-          </>
+            </motion.div>
+          )}
+
+        {/* Loading indicator and observer target */}
+        {filteredItems.length > 0 && (
+          <div ref={observerTarget} className="flex flex-col items-center justify-center py-12">
+            {hasMore && (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="text-4xl mb-2 text-white/40"
+              >
+                🍌
+              </motion.div>
+            )}
+            {!hasMore && displayedItems.length > 0 && (
+              <p className="text-white/30 text-sm font-medium">
+                Showing all {displayedItems.length} items
+              </p>
+            )}
+          </div>
         )}
       </div>
 
-      <Modal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      <ModalNew item={selectedItem} onClose={() => setSelectedItem(null)} />
     </main>
   )
 }

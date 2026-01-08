@@ -29,7 +29,7 @@ export const translations = {
     nanoBananaPro: 'Nano banana pro',
     // Metadata
     metadata: {
-      title: '🍌 Nano Banana - Prompt 精选案例',
+      title: 'Nano Banana - Prompt 精选案例',
       description: 'Nano Banana 提供海量 Prompt 精选案例，快速复制 Prompt，探索灵感，提升创作效率。',
       keywords: ['Nano Banana', 'nanobanana', 'gpt4o', 'ChatGPT', 'Prompt', 'Prompt 精选案例', 'Prompt 案例', 'Prompt 库'],
     },
@@ -62,7 +62,7 @@ export const translations = {
     nanoBananaPro: 'Nano banana pro',
     // Metadata
     metadata: {
-      title: '🍌 Nano Banana - Prompt Collection',
+      title: 'Nano Banana - Prompt Collection',
       description: 'Nano Banana provides a vast collection of curated Prompt cases. Quickly copy Prompts, explore inspiration, and boost your creative efficiency.',
       keywords: ['Nano Banana', 'nanobanana', 'gpt4o', 'ChatGPT', 'Prompt', 'Prompt Collection', 'Prompt Cases', 'Prompt Library'],
     },

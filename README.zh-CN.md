@@ -2,7 +2,7 @@
 
 > 一个现代化、视觉惊艳的 AI 提示词案例库，展示 1084+ 个精心策划的 AI 生成艺术作品。
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+**[🇺🇸 English Version](./README.md)** | [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![Cloudflare R2](https://img.shields.io/badge/Cloudflare-R2-orange?style=for-the-badge&logo=cloudflare)](https://www.cloudflare.com/products/r2/)
@@ -268,7 +268,3 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ⭐ 如果这个项目对你有帮助，请给个 Star！
 
 📧 有问题或建议？欢迎提交 [Issue](https://github.com/gotoBest/banana-nano-prompt/issues)
-
----
-
-**[English Version](./README.md)**

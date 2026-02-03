@@ -2,7 +2,7 @@
 
 > A modern, visually stunning AI prompt gallery showcasing 1084+ carefully curated AI-generated artworks.
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+**[🇨🇳 中文版 README](./README.zh-CN.md)** | [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![Cloudflare R2](https://img.shields.io/badge/Cloudflare-R2-orange?style=for-the-badge&logo=cloudflare)](https://www.cloudflare.com/products/r2/)
@@ -268,7 +268,3 @@ MIT License - see [LICENSE](LICENSE) file for details
 ⭐ If this project helps you, please give it a Star!
 
 📧 Questions or suggestions? Welcome to submit [Issue](https://github.com/gotoBest/banana-nano-prompt/issues)
-
----
-
-**[中文版 README](./README.zh-CN.md)**
